@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "verify:rls": "node --env-file=.env.local scripts/verify-rls.mjs"
+    "verify:rls": "node --env-file=.env.local scripts/verify-rls.mjs",
+    "verify:demo": "node --env-file=.env.local scripts/verify-demo-login.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.4",
