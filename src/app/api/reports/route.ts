@@ -61,8 +61,32 @@ export async function POST(request: Request) {
 
   const { data: firm } = await supabase
     .from('firms')
-    .select('name, caution_threshold, action_threshold, website, phone, logo_path')
+    .select('name, caution_threshold, action_threshold, website, phone, logo_path, is_demo')
     .single()
+
+  // The demo account is public, so it is also a free compute and storage
+  // faucet for anything that finds it. Cap the day and sweep the backlog.
+  const DEMO_DAILY_LIMIT = 10
+  const DEMO_KEEP = 5
+
+  if (firm?.is_demo) {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    const { count } = await supabase
+      .from('reports')
+      .select('*', { count: 'exact', head: true })
+      .not('pdf_path', 'is', null)
+      .gte('created_at', since)
+
+    if ((count ?? 0) >= DEMO_DAILY_LIMIT) {
+      return NextResponse.json(
+        {
+          error:
+            'The demo has generated its limit for today. It resets in a few hours — or sign in with a real account to keep going.',
+        },
+        { status: 429 }
+      )
+    }
+  }
 
   const { data: people } = await supabase
     .from('people')
@@ -118,7 +142,13 @@ export async function POST(request: Request) {
 
   let parsed: Parsed
   try {
-    const res = await fetch(`${process.env.REPORT_SERVICE_URL}/generate`, {
+    // Full endpoint URL. Locally that is the uvicorn process; in production it
+    // is this same deployment's Python function.
+    const endpoint =
+      process.env.REPORT_SERVICE_URL ||
+      new URL('/api/py/generate', request.url).toString()
+
+    const res = await fetch(endpoint, {
       method: 'POST',
       body: upstream,
       headers: process.env.REPORT_SERVICE_SECRET
@@ -229,6 +259,26 @@ export async function POST(request: Request) {
         { error: `saved the report but not the readings: ${readingsError.message}` },
         { status: 500 }
       )
+    }
+  }
+
+  // Sweep the demo's older runs so the account stays small and legible.
+  if (firm?.is_demo) {
+    const { data: old } = await supabase
+      .from('reports')
+      .select('id, source_file_path, photo_path, pdf_path')
+      .not('pdf_path', 'is', null)
+      .order('created_at', { ascending: false })
+      .range(DEMO_KEEP, 100)
+
+    for (const r of old ?? []) {
+      await supabase.storage
+        .from('raw-uploads')
+        .remove([r.source_file_path, r.photo_path].filter(Boolean) as string[])
+      await supabase.storage
+        .from('generated-reports')
+        .remove([r.pdf_path as string])
+      await supabase.from('reports').delete().eq('id', r.id)
     }
   }
 

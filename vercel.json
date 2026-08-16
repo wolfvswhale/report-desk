@@ -1,0 +1,9 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/py/generate.py": {
+      "memory": 3009,
+      "maxDuration": 120
+    }
+  }
+}
