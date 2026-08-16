@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
 const OUTCOME_STYLES: Record<string, string> = {
@@ -41,7 +42,15 @@ export default async function ReportsPage() {
       </header>
 
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <h1 className="text-xl font-semibold text-stone-900">Reports</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-stone-900">Reports</h1>
+          <Link
+            href="/reports/new"
+            className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800"
+          >
+            New report
+          </Link>
+        </div>
 
         <div className="mt-5 overflow-hidden rounded-xl border border-stone-200 bg-white">
           {(reports ?? []).length === 0 && (

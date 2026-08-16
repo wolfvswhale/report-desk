@@ -1,0 +1,11 @@
+# Unpinned on purpose: your Mac only has Python 3.9, and pinning to the
+# newest releases breaks there. pip resolves what fits. requirements.lock.txt
+# next to this file records exactly what got installed locally.
+fastapi
+uvicorn[standard]
+python-multipart
+pdfplumber
+matplotlib
+reportlab
+Pillow
+pypdfium2
