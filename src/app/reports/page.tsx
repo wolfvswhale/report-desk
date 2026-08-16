@@ -33,11 +33,19 @@ export default async function ReportsPage() {
               {firm?.action_threshold} pCi/L
             </p>
           </div>
-          <form action="/auth/signout" method="post">
-            <button className="text-sm text-stone-500 hover:text-stone-900">
-              Sign out
-            </button>
-          </form>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/settings"
+              className="text-sm text-stone-500 hover:text-stone-900"
+            >
+              Settings
+            </Link>
+            <form action="/auth/signout" method="post">
+              <button className="text-sm text-stone-500 hover:text-stone-900">
+                Sign out
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 
