@@ -60,9 +60,10 @@ export default async function ReportsPage() {
           )}
 
           {(reports ?? []).map((r) => (
-            <div
+            <Link
               key={r.id}
-              className="flex items-center justify-between border-b border-stone-100 px-5 py-4 last:border-0"
+              href={`/reports/${r.id}`}
+              className="flex items-center justify-between border-b border-stone-100 px-5 py-4 last:border-0 hover:bg-stone-50"
             >
               <div>
                 <p className="text-sm font-medium text-stone-900">
@@ -85,7 +86,7 @@ export default async function ReportsPage() {
                   {r.outcome ?? r.status}
                 </span>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

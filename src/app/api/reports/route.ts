@@ -61,8 +61,13 @@ export async function POST(request: Request) {
 
   const { data: firm } = await supabase
     .from('firms')
-    .select('caution_threshold, action_threshold')
+    .select('name, caution_threshold, action_threshold, website, phone, logo_path')
     .single()
+
+  const { data: people } = await supabase
+    .from('people')
+    .select('full_name, license_number')
+    .order('sort_order')
 
   const { data: template } = await supabase
     .from('templates')
@@ -83,10 +88,33 @@ export async function POST(request: Request) {
     )
   }
 
-  // 1. Hand both files to the Python generator.
+  // 1. Hand both files to the Python generator, with this firm's branding
+  // so nobody else's name, licence number or logo lands on the report.
   const upstream = new FormData()
   upstream.append('raw_pdf', rawPdf, rawPdf.name || 'raw.pdf')
   upstream.append('house_photo', housePhoto, housePhoto.name || 'photo.jpg')
+  upstream.append(
+    'branding_json',
+    JSON.stringify({
+      rms_name: people?.[0]?.full_name ?? '',
+      rms_license: people?.[0]?.license_number ?? '',
+      rms_name_2: people?.[1]?.full_name ?? '',
+      rms_license_2: people?.[1]?.license_number ?? '',
+      website: firm?.website ?? '',
+      company_phone: firm?.phone ?? '',
+      // Empty means "draw no logo" rather than falling back to a built-in one.
+      logo_path: '',
+    })
+  )
+
+  if (firm?.logo_path) {
+    const { data: logoBlob } = await supabase.storage
+      .from('raw-uploads')
+      .download(firm.logo_path)
+    if (logoBlob) {
+      upstream.append('logo', logoBlob, firm.logo_path.split('/').pop() || 'logo.png')
+    }
+  }
 
   let parsed: Parsed
   try {

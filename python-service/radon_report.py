@@ -1064,7 +1064,9 @@ def _draw_cover(c, data, house_image, report_number):
                            width=right_w, leading=14)
 
     # Phone -- prominently displayed right under contact text
-    phone = "(804) 385-2233"  # hardcoded override -- always 804-385-2233
+    # Was hardcoded to one company's number. Now: whatever branding the
+    # caller supplied, else what the raw PDF header carried.
+    phone = COMPANY.get("company_phone") or data.get("company_phone", "")
     c.setFillColor(YELLOW)
     c.setFont("Helvetica-Bold", 18)
     c.drawString(right_x, text_y - 0.32 * inch, phone)

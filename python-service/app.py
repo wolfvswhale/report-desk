@@ -5,9 +5,13 @@ hands them to the existing functions, and returns the finished PDF plus
 the parsed numbers so the web app can store them.
 """
 import base64
+import json
 import os
 import tempfile
+import threading
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, File, Form, Header, HTTPException, UploadFile
 
@@ -16,6 +20,24 @@ import radon_report as rr
 app = FastAPI(title="Report Desk generator")
 
 SHARED_SECRET = os.environ.get("REPORT_SERVICE_SECRET", "")
+
+# radon_report keeps branding in a module-level dict, so swap it per request
+# under a lock rather than letting two firms' reports cross.
+_BRANDING_LOCK = threading.Lock()
+
+
+@contextmanager
+def branding(overrides):
+    with _BRANDING_LOCK:
+        original = dict(rr.COMPANY)
+        try:
+            # Keep empty strings: "" is how a caller says "draw nothing here",
+            # which is what suppresses a fallback logo or licence number.
+            rr.COMPANY.update({k: v for k, v in overrides.items() if v is not None})
+            yield
+        finally:
+            rr.COMPANY.clear()
+            rr.COMPANY.update(original)
 
 
 @app.get("/health")
@@ -52,6 +74,8 @@ async def generate(
     raw_pdf: UploadFile = File(...),
     house_photo: UploadFile = File(...),
     report_number: str = Form(default=""),
+    branding_json: str = Form(default=""),
+    logo: Optional[UploadFile] = File(default=None),
     x_service_secret: str = Header(default=""),
 ):
     if SHARED_SECRET and x_service_secret != SHARED_SECRET:
@@ -81,8 +105,15 @@ async def generate(
         number = report_number or rr.generate_report_number(data)
         out_path = work / "report.pdf"
 
+        overrides = json.loads(branding_json) if branding_json else {}
+        if logo is not None:
+            logo_path = work / ("logo" + Path(logo.filename or "l.png").suffix)
+            logo_path.write_bytes(await logo.read())
+            overrides["logo_path"] = str(logo_path)
+
         try:
-            rr.build_pdf(data, img_path, out_path, number, pdf_path, weather)
+            with branding(overrides):
+                rr.build_pdf(data, img_path, out_path, number, pdf_path, weather)
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"could not build the report: {e}")
 
