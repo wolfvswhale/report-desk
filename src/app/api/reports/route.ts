@@ -146,7 +146,7 @@ export async function POST(request: Request) {
     // is this same deployment's Python function.
     const endpoint =
       process.env.REPORT_SERVICE_URL ||
-      new URL('/api/generate', request.url).toString()
+      new URL('/pygen', request.url).toString()
 
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -156,9 +156,21 @@ export async function POST(request: Request) {
         : undefined,
     })
     if (!res.ok) {
-      const detail = await res.text()
+      // Never hand a whole HTML error page to the browser. Pull the useful
+      // line out if there is one, otherwise say something a person can act on.
+      const raw = await res.text()
+      let detail = raw.trim()
+      try {
+        detail = JSON.parse(raw).detail ?? detail
+      } catch {
+        if (detail.startsWith('<')) {
+          detail = `the generator did not respond properly (HTTP ${res.status})`
+        }
+      }
+      if (detail.length > 200) detail = detail.slice(0, 200) + '…'
+
       return NextResponse.json(
-        { error: `report generator said no: ${detail}` },
+        { error: `Report generator: ${detail}` },
         { status: res.status === 422 ? 422 : 502 }
       )
     }

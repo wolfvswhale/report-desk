@@ -4,5 +4,11 @@
     "api/generate.py": {
       "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/pygen",
+      "destination": "/api/generate"
+    }
+  ]
 }
