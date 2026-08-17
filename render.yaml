@@ -1,0 +1,16 @@
+# Render Blueprint: the report generator, running as its own small service.
+# The Next.js app on Vercel calls it and passes the shared secret.
+services:
+  - type: web
+    name: report-desk-generator
+    runtime: docker
+    plan: free
+    region: ohio
+    dockerfilePath: ./render/Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Set this in the Render dashboard to the same value Vercel holds.
+      - key: REPORT_SERVICE_SECRET
+        sync: false
