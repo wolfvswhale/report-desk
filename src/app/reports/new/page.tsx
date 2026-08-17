@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -54,6 +54,11 @@ export default function NewReportPage() {
   const [error, setError] = useState<string | null>(null)
 
   const ready = pdf !== null && photo !== null && !busy
+
+  // Wake the generator while the person is still choosing files.
+  useEffect(() => {
+    fetch('/api/warm', { method: 'POST' }).catch(() => {})
+  }, [])
 
   // Lets someone without a radon monitor still run the whole thing.
   async function loadSamples() {

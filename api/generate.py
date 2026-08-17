@@ -40,6 +40,8 @@ def branding(overrides):
             rr.COMPANY.update(original)
 
 
+@app.get("/")
+@app.get("/health")
 @app.get("/api/health")
 def health():
     return {"ok": True}
@@ -69,6 +71,9 @@ def _parsed_fields(data, report_number):
     }
 
 
+# Two paths for one handler: "/generate" when this runs as its own service,
+# "/api/generate" when it runs inside the Next.js deployment.
+@app.post("/generate")
 @app.post("/api/generate")
 async def generate(
     raw_pdf: UploadFile = File(...),
