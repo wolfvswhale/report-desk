@@ -93,7 +93,7 @@ export default function NewReportPage() {
           <div>
             <h1 className="rd-h1">New report</h1>
             <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
-              Two files in, seven pages out. Address, dates, serial number and
+              Two files in, six pages out. Address, dates, serial number and
               every hourly reading are pulled from the monitor file — you type nothing.
             </p>
           </div>
@@ -125,7 +125,7 @@ export default function NewReportPage() {
 
         {busy && (
           <p className="mt-3 text-center text-[11px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--dim)' }}>
-            Reading the file · pulling outdoor weather · drawing seven pages
+            Reading the file · pulling outdoor weather · drawing six pages
           </p>
         )}
       </div>
