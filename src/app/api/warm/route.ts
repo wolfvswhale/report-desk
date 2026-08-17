@@ -12,7 +12,9 @@ export async function POST() {
   try {
     const res = await fetch(health, {
       method: 'GET',
-      signal: AbortSignal.timeout(4000),
+      // Waking takes about 21 seconds. Hanging up at 4 risked cancelling the
+      // boot before it started. Nothing waits on this call, so let it finish.
+      signal: AbortSignal.timeout(30000),
       cache: 'no-store',
     })
     return NextResponse.json({ warmed: res.ok, status: res.status })
