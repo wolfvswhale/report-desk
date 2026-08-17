@@ -146,7 +146,7 @@ export async function POST(request: Request) {
     // is this same deployment's Python function.
     const endpoint =
       process.env.REPORT_SERVICE_URL ||
-      new URL('/api/py/generate', request.url).toString()
+      new URL('/api/generate', request.url).toString()
 
     const res = await fetch(endpoint, {
       method: 'POST',

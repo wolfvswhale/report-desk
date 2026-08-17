@@ -40,7 +40,7 @@ def branding(overrides):
             rr.COMPANY.update(original)
 
 
-@app.get("/api/py/health")
+@app.get("/api/health")
 def health():
     return {"ok": True}
 
@@ -69,7 +69,7 @@ def _parsed_fields(data, report_number):
     }
 
 
-@app.post("/api/py/generate")
+@app.post("/api/generate")
 async def generate(
     raw_pdf: UploadFile = File(...),
     house_photo: UploadFile = File(...),
