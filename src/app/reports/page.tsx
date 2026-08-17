@@ -1,11 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-
-const OUTCOME_STYLES: Record<string, string> = {
-  pass: 'bg-emerald-50 text-emerald-700',
-  caution: 'bg-amber-50 text-amber-700',
-  fail: 'bg-red-50 text-red-700',
-}
+import { Backdrop, Header } from '@/components/shell'
+import { OutcomePill } from '@/components/outcome'
 
 export default async function ReportsPage() {
   const supabase = await createClient()
@@ -17,85 +13,71 @@ export default async function ReportsPage() {
 
   const { data: reports } = await supabase
     .from('reports')
-    .select('id, property_address, property_city, property_state, test_started_at, average_pci, outcome, status')
+    .select('id, property_address, property_city, property_state, test_started_at, average_pci, outcome, status, client_name, report_number')
     .order('created_at', { ascending: false })
 
+  const list = reports ?? []
+
   return (
-    <main className="min-h-screen bg-stone-50">
-      <header className="border-b border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold text-stone-900">
-              {firm?.name ?? 'Report Desk'}
-            </p>
-            <p className="text-xs text-stone-500">
-              Caution at {firm?.caution_threshold} pCi/L · Action at{' '}
-              {firm?.action_threshold} pCi/L
-            </p>
-          </div>
-          <div className="flex items-center gap-5">
-            <Link
-              href="/settings"
-              className="text-sm text-stone-500 hover:text-stone-900"
-            >
-              Settings
-            </Link>
-            <form action="/auth/signout" method="post">
-              <button className="text-sm text-stone-500 hover:text-stone-900">
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+    <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--base)' }}>
+      <Backdrop />
+      <div className="relative z-10">
+        <Header firmName={firm?.name} />
 
-      <div className="mx-auto max-w-4xl px-6 py-10">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-stone-900">Reports</h1>
-          <Link
-            href="/reports/new"
-            className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800"
-          >
-            New report
-          </Link>
-        </div>
+        <div className="mx-auto max-w-5xl px-6 py-12 sm:px-10">
+          <div className="rd-rise flex flex-wrap items-end justify-between gap-5">
+            <div className="flex gap-5">
+              <div className="rd-bar" />
+              <div>
+                <h1 className="rd-h1">Reports</h1>
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--dim)' }}>
+                  Caution at {firm?.caution_threshold} pCi/L &nbsp;·&nbsp; Action at {firm?.action_threshold} pCi/L
+                </p>
+              </div>
+            </div>
+            <Link href="/reports/new" className="rd-btn">+ New report</Link>
+          </div>
 
-        <div className="mt-5 overflow-hidden rounded-xl border border-stone-200 bg-white">
-          {(reports ?? []).length === 0 && (
-            <p className="px-5 py-8 text-sm text-stone-500">
-              No reports yet.
-            </p>
+          {list.length === 0 && (
+            <div className="rd-panel rd-rise mt-8 px-8 py-16 text-center" style={{ animationDelay: '.1s' }}>
+              <p className="rd-h1" style={{ fontSize: 22 }}>Nothing here yet</p>
+              <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
+                Drop in a monitor file and a photo of the house. The first report
+                takes about fifteen seconds.
+              </p>
+              <Link href="/reports/new" className="rd-btn mt-6">+ New report</Link>
+            </div>
           )}
 
-          {(reports ?? []).map((r) => (
-            <Link
-              key={r.id}
-              href={`/reports/${r.id}`}
-              className="flex items-center justify-between border-b border-stone-100 px-5 py-4 last:border-0 hover:bg-stone-50"
-            >
-              <div>
-                <p className="text-sm font-medium text-stone-900">
-                  {r.property_address}
-                </p>
-                <p className="text-xs text-stone-500">
-                  {r.property_city}, {r.property_state} ·{' '}
-                  {new Date(r.test_started_at).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm tabular-nums text-stone-700">
-                  {r.average_pci} pCi/L
-                </span>
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                    OUTCOME_STYLES[r.outcome ?? ''] ?? 'bg-stone-100 text-stone-600'
-                  }`}
+          {list.length > 0 && (
+            <div className="rd-panel rd-rise mt-8 overflow-hidden" style={{ animationDelay: '.1s' }}>
+              {list.map((r, i) => (
+                <Link
+                  key={r.id}
+                  href={`/reports/${r.id}`}
+                  className="flex flex-wrap items-center gap-4 px-6 py-5 transition-colors hover:bg-white/[0.04]"
+                  style={{ borderTop: i === 0 ? 'none' : '1px solid var(--hair)' }}
                 >
-                  {r.outcome ?? r.status}
-                </span>
-              </div>
-            </Link>
-          ))}
+                  <div className="min-w-[220px] flex-1">
+                    <p className="text-[15px] font-bold text-white">{r.property_address}</p>
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+                      {[r.property_city, r.property_state].filter(Boolean).join(', ')}
+                      {r.report_number ? ` · ${r.report_number}` : ''}
+                      {' · '}
+                      {new Date(r.test_started_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className="rd-num text-lg font-extrabold text-white">
+                    {r.average_pci}
+                    <span className="ml-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--dim)' }}>
+                      pCi/L
+                    </span>
+                  </span>
+                  <OutcomePill outcome={r.outcome ?? r.status} size="sm" />
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>

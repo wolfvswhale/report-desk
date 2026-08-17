@@ -28,19 +28,23 @@ function Note({ text, bad }: { text: string; bad?: boolean }) {
   if (!text) return null
   return (
     <p
-      className={`mt-3 rounded-lg px-3 py-2 text-sm ${
-        bad ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700'
-      }`}
+      className="mt-4 rounded-lg px-3 py-2 text-sm"
+      style={
+        bad
+          ? { background: 'rgba(208,59,59,.12)', color: '#ff9a9a' }
+          : { background: 'rgba(12,163,12,.12)', color: '#7ee87e' }
+      }
     >
-      {text}
+      {bad ? '▲ ' : '● '}{text}
     </p>
   )
 }
 
-const input =
-  'mt-1 w-full rounded-lg border border-stone-300 px-3 py-2 text-stone-900 outline-none focus:border-stone-900'
-const label = 'block text-sm font-medium text-stone-700'
-const card = 'rounded-xl border border-stone-200 bg-white p-6'
+const input = 'rd-input mt-2'
+const label = 'rd-label'
+const card = 'rd-panel p-6'
+const btn = 'rd-btn mt-5'
+const btnGhost = 'rd-btn-ghost'
 
 export function FirmForm({ firm }: { firm: Firm }) {
   const [pending, start] = useTransition()
@@ -58,8 +62,8 @@ export function FirmForm({ firm }: { firm: Firm }) {
         })
       }
     >
-      <h2 className="text-sm font-semibold text-stone-900">The firm</h2>
-      <p className="mt-1 text-xs text-stone-500">
+      <h2 className="rd-eyebrow" style={{color:"#fff"}}>The firm</h2>
+      <p className="mt-2 text-[13px]" style={{color:"var(--dim)"}}>
         Name, contact details and the levels that decide pass, caution and fail.
       </p>
 
@@ -113,7 +117,7 @@ export function FirmForm({ firm }: { firm: Firm }) {
 
       <button
         disabled={pending}
-        className="mt-5 rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800 disabled:opacity-50"
+        className={btn}
       >
         {pending ? 'Saving…' : 'Save'}
       </button>
@@ -129,8 +133,8 @@ export function LogoForm({ logoUrl }: { logoUrl: string | null }) {
 
   return (
     <div className={card}>
-      <h2 className="text-sm font-semibold text-stone-900">Logo</h2>
-      <p className="mt-1 text-xs text-stone-500">
+      <h2 className="rd-eyebrow" style={{color:"#fff"}}>Logo</h2>
+      <p className="mt-2 text-[13px]" style={{color:"var(--dim)"}}>
         Prints on the report cover. With no logo set, that space is left blank —
         no stand-in, and nobody else&apos;s mark.
       </p>
@@ -140,7 +144,7 @@ export function LogoForm({ logoUrl }: { logoUrl: string | null }) {
         <img
           src={logoUrl}
           alt="Current logo"
-          className="mt-4 h-24 w-auto rounded-lg border border-stone-200 bg-white object-contain p-2"
+          className="mt-5 h-24 w-auto rounded-xl object-contain p-2" style={{border:"1px solid var(--edge)",background:"rgba(255,255,255,.04)"}}
         />
       )}
 
@@ -158,11 +162,11 @@ export function LogoForm({ logoUrl }: { logoUrl: string | null }) {
           type="file"
           name="logo"
           accept="image/*"
-          className="text-sm text-stone-600 file:mr-3 file:rounded-lg file:border-0 file:bg-stone-900 file:px-4 file:py-2 file:text-sm file:font-medium file:text-white"
+          className="text-[13px] file:mr-3 file:rounded-full file:border-0 file:px-4 file:py-2 file:text-[13px] file:font-extrabold" style={{color:"var(--dim)"}}
         />
         <button
           disabled={pending}
-          className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+          className={btnGhost}
         >
           {pending ? 'Uploading…' : 'Upload'}
         </button>
@@ -176,7 +180,7 @@ export function LogoForm({ logoUrl }: { logoUrl: string | null }) {
                 setNote(res.error ?? 'Logo removed.')
               })
             }
-            className="text-sm text-stone-500 underline underline-offset-4 hover:text-stone-900"
+            className="text-[13px] underline underline-offset-4" style={{color:"var(--dim)"}}
           >
             Remove
           </button>
@@ -194,25 +198,25 @@ export function PeopleEditor({ people }: { people: Person[] }) {
 
   return (
     <div className={card}>
-      <h2 className="text-sm font-semibold text-stone-900">
+      <h2 className="rd-eyebrow" style={{color:"#fff"}}>
         Certified people
       </h2>
-      <p className="mt-1 text-xs text-stone-500">
+      <p className="mt-2 text-[13px]" style={{color:"var(--dim)"}}>
         These names and licence numbers print in the signature block of every
         report. The cover has room for two.
       </p>
 
-      <div className="mt-4 divide-y divide-stone-100">
+      <div className="mt-5">
         {people.length === 0 && (
-          <p className="py-3 text-sm text-stone-500">
+          <p className="py-3 text-sm" style={{color:"var(--dim)"}}>
             Nobody added yet. Reports will print without a signature block.
           </p>
         )}
         {people.map((p) => (
-          <div key={p.id} className="flex items-center justify-between py-3">
+          <div key={p.id} className="flex items-center justify-between py-3" style={{borderTop:"1px solid var(--hair)"}}>
             <div>
-              <p className="text-sm text-stone-900">{p.full_name}</p>
-              <p className="text-xs text-stone-500">
+              <p className="text-[15px] font-bold text-white">{p.full_name}</p>
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.12em]" style={{color:"var(--dim)"}}>
                 {[p.license_number, p.role].filter(Boolean).join(' · ') ||
                   'No licence number'}
               </p>
@@ -226,7 +230,7 @@ export function PeopleEditor({ people }: { people: Person[] }) {
                   setNote(res.error ?? 'Removed.')
                 })
               }
-              className="text-sm text-stone-500 hover:text-red-700 disabled:opacity-50"
+              className="text-[12px] font-bold uppercase tracking-[0.12em] disabled:opacity-40" style={{color:"var(--dim)"}}
             >
               Remove
             </button>
@@ -236,7 +240,7 @@ export function PeopleEditor({ people }: { people: Person[] }) {
 
       {people.length < 2 && (
         <form
-          className="mt-4 grid gap-3 border-t border-stone-100 pt-4 sm:grid-cols-3"
+          className="mt-5 grid gap-4 pt-5 sm:grid-cols-3" style={{borderTop:"1px solid var(--hair)"}}
           action={(fd) =>
             start(async () => {
               const res = await addPerson(fd)
@@ -264,7 +268,7 @@ export function PeopleEditor({ people }: { people: Person[] }) {
           <div className="sm:col-span-3">
             <button
               disabled={pending}
-              className="rounded-lg border border-stone-300 px-4 py-2 text-sm font-medium text-stone-800 hover:bg-stone-50 disabled:opacity-50"
+              className={btnGhost}
             >
               {pending ? 'Adding…' : 'Add person'}
             </button>

@@ -1,26 +1,111 @@
 @import "tailwindcss";
 
+/* Report Desk — the storefront language.
+   Same tokens as the gig thumbnails, so the cards and the app read as one. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --base: #060a13;
+  --accent: #12c8e0;
+  --accent-ink: #04212a;
+  --ink: #ffffff;
+  --body: #ccd2de;
+  --dim: #7d8798;
+  --glass: rgba(255, 255, 255, 0.055);
+  --edge: rgba(255, 255, 255, 0.15);
+  --hair: rgba(255, 255, 255, 0.07);
+
+  /* Fixed. Never themed, never reused for anything decorative. */
+  --good: #0ca30c;
+  --caution: #fab219;
+  --fail: #d03b3b;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--base);
+  --color-foreground: var(--ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html, body {
+  background: #05070d;
+  color: var(--body);
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ---- shared pieces ------------------------------------------------------ */
+
+.rd-glow {
+  position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 72% 46%,
+    rgba(18, 200, 224, 0.22) 0%, rgba(18, 200, 224, 0.09) 34%, transparent 62%);
+}
+.rd-grid {
+  position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 88px 88px;
+  mask-image: linear-gradient(to bottom, #000 0%, #000 62%, transparent 100%);
+}
+
+.rd-eyebrow {
+  font-size: 11px; font-weight: 800; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--dim);
+}
+.rd-h1 {
+  font-size: clamp(30px, 5vw, 42px); line-height: 1.02; font-weight: 800;
+  letter-spacing: -0.015em; text-transform: uppercase; color: var(--ink);
+}
+.rd-bar {
+  width: 8px; border-radius: 4px; background: var(--accent);
+  box-shadow: 0 0 22px rgba(18, 200, 224, 0.55);
+}
+
+.rd-panel {
+  background: var(--glass); border: 1px solid var(--edge);
+  border-radius: 16px; backdrop-filter: blur(9px);
+}
+.rd-chip {
+  background: var(--glass); border: 1px solid var(--edge); border-radius: 999px;
+  padding: 11px 18px; font-size: 13px; font-weight: 700; color: var(--ink);
+}
+.rd-badge {
+  display: inline-flex; align-items: center; gap: 9px;
+  border: 1.5px solid var(--accent); color: var(--accent);
+  padding: 8px 15px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  letter-spacing: 0.09em; text-transform: uppercase;
+}
+.rd-btn {
+  display: inline-flex; align-items: center; gap: 9px; border: 0;
+  background: var(--accent); color: var(--accent-ink);
+  padding: 12px 22px; border-radius: 999px;
+  font-size: 13px; font-weight: 800; letter-spacing: 0.04em; cursor: pointer;
+}
+.rd-btn:hover { filter: brightness(1.1); }
+.rd-btn:disabled { opacity: 0.45; cursor: default; filter: none; }
+.rd-btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--glass); border: 1px solid var(--edge); color: var(--ink);
+  padding: 11px 20px; border-radius: 999px; font-size: 13px; font-weight: 700; cursor: pointer;
+}
+.rd-btn-ghost:hover { border-color: rgba(255, 255, 255, 0.32); }
+
+.rd-input {
+  width: 100%; background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--edge); border-radius: 10px;
+  padding: 11px 13px; color: var(--ink); font-size: 14px; outline: none;
+}
+.rd-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(18, 200, 224, 0.14); }
+.rd-label { display: block; font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+
+.rd-num { font-variant-numeric: tabular-nums; }
+.rd-trace { stroke-dasharray: 4000; stroke-dashoffset: 4000; animation: rd-draw 2.2s cubic-bezier(.4,0,.2,1) .3s forwards; }
+@keyframes rd-draw { to { stroke-dashoffset: 0; } }
+.rd-fade { opacity: 0; animation: rd-fade 1s ease 1.4s forwards; }
+@keyframes rd-fade { to { opacity: 1; } }
+.rd-rise { opacity: 0; transform: translateY(10px); animation: rd-rise .6s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes rd-rise { to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rd-trace, .rd-fade, .rd-rise { animation: none; opacity: 1; transform: none; stroke-dashoffset: 0; }
 }

@@ -1,160 +1,168 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import ReadingsTable from './readings-table'
+import { Backdrop, Header } from '@/components/shell'
+import { OutcomePill, outcomeColor } from '@/components/outcome'
+import { Trace } from './trace'
+import { HeroNumber } from './hero'
 
-const OUTCOME_STYLES: Record<string, string> = {
-  pass: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
-  caution: 'bg-amber-50 text-amber-700 ring-amber-200',
-  fail: 'bg-red-50 text-red-700 ring-red-200',
-}
-
-function Field({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null
+function Chip({ k, v }: { k: string; v: string | null }) {
+  if (!v) return null
   return (
-    <div>
-      <dt className="text-xs uppercase tracking-wide text-stone-400">{label}</dt>
-      <dd className="mt-0.5 text-sm text-stone-800">{value}</dd>
-    </div>
+    <span className="rd-chip">
+      <span className="mr-2 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--dim)' }}>{k}</span>
+      {v}
+    </span>
   )
 }
 
-export default async function ReportPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function ReportPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = await createClient()
 
-  const { data: report } = await supabase
-    .from('reports')
-    .select('*')
-    .eq('id', id)
-    .maybeSingle()
-
+  const { data: report } = await supabase.from('reports').select('*').eq('id', id).maybeSingle()
   if (!report) notFound()
 
   const { data: firm } = await supabase
-    .from('firms')
-    .select('caution_threshold, action_threshold')
-    .single()
+    .from('firms').select('name, caution_threshold, action_threshold').single()
 
   const { data: readings } = await supabase
-    .from('readings')
-    .select('recorded_at, pci')
-    .eq('report_id', id)
-    .order('recorded_at')
+    .from('readings').select('recorded_at, pci').eq('report_id', id).order('recorded_at')
 
   const { data: signed } = report.pdf_path
-    ? await supabase.storage
-        .from('generated-reports')
-        .createSignedUrl(report.pdf_path, 60 * 60)
+    ? await supabase.storage.from('generated-reports').createSignedUrl(report.pdf_path, 3600)
     : { data: null }
 
-  const window_ = `${new Date(report.test_started_at).toLocaleString()} → ${new Date(
-    report.test_ended_at
-  ).toLocaleString()}`
+  const caution = Number(firm?.caution_threshold ?? 2.6)
+  const action = Number(firm?.action_threshold ?? 4.0)
+  const rows = (readings ?? []).map((r) => ({ recorded_at: r.recorded_at, pci: Number(r.pci) }))
+  const hi = rows.length ? Math.max(...rows.map((r) => r.pci)) : 0
+  const lo = rows.length ? Math.min(...rows.map((r) => r.pci)) : 0
 
   return (
-    <main className="min-h-screen bg-stone-50">
-      <div className="mx-auto max-w-5xl px-6 py-8">
-        <Link href="/reports" className="text-sm text-stone-500 hover:text-stone-900">
-          ← Reports
-        </Link>
+    <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--base)' }}>
+      <Backdrop />
+      <div className="relative z-10">
+        <Header firmName={firm?.name} />
 
-        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-semibold text-stone-900">
-              {report.property_address}
-            </h1>
-            <p className="mt-0.5 text-sm text-stone-500">
-              {[report.property_city, report.property_state, report.property_zip]
-                .filter(Boolean)
-                .join(', ')}
-              {report.report_number ? ` · ${report.report_number}` : ''}
-            </p>
-          </div>
+        <div className="mx-auto max-w-5xl px-6 py-10 sm:px-10 sm:py-12">
+          <Link href="/reports" className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--dim)' }}>
+            ← Reports
+          </Link>
 
-          <div className="flex items-center gap-3">
-            <span
-              className={`rounded-full px-3 py-1 text-sm font-medium capitalize ring-1 ${
-                OUTCOME_STYLES[report.outcome ?? ''] ??
-                'bg-stone-100 text-stone-600 ring-stone-200'
-              }`}
-            >
-              {report.average_pci} pCi/L · {report.outcome ?? report.status}
+          <div className="rd-rise mt-6">
+            <span className="rd-badge">
+              ◆ {report.status === 'complete' ? 'Complete' : report.status} · {report.duration_hr ?? '—'}-hour test
             </span>
-            {signed?.signedUrl && (
-              <a
-                href={signed.signedUrl}
-                download
-                className="rounded-lg bg-stone-900 px-4 py-2 text-sm font-medium text-white hover:bg-stone-800"
-              >
-                Download PDF
-              </a>
-            )}
+            <div className="mt-5 flex gap-5">
+              <div className="rd-bar" />
+              <div>
+                <h1 className="rd-h1">{report.property_address}</h1>
+                <p className="mt-2 text-[11px] font-bold uppercase tracking-[0.13em]" style={{ color: 'var(--dim)' }}>
+                  {[report.property_city, report.property_state, report.property_zip].filter(Boolean).join(', ')}
+                  {report.report_number ? ` · Report ${report.report_number}` : ''}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <dl className="mt-6 grid grid-cols-2 gap-x-6 gap-y-4 rounded-xl border border-stone-200 bg-white p-5 sm:grid-cols-4">
-          <Field label="Client" value={report.client_name} />
-          <Field label="Monitor location" value={report.room} />
-          <Field
-            label="Monitor"
-            value={
-              [report.monitor_model, report.monitor_serial]
-                .filter(Boolean)
-                .join(' · ') || null
-            }
-          />
-          <Field
-            label="Duration"
-            value={report.duration_hr ? `${report.duration_hr} hours` : null}
-          />
-          <div className="col-span-2 sm:col-span-4">
-            <dt className="text-xs uppercase tracking-wide text-stone-400">
-              Test window
-            </dt>
-            <dd className="mt-0.5 text-sm text-stone-800">{window_}</dd>
-          </div>
-        </dl>
-
-        {!report.weather_included && (
-          <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            Outdoor weather was unavailable when this report was built, so that
-            page is empty. Everything else is complete.
-          </p>
-        )}
-
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold text-stone-900">The report</h2>
-          {signed?.signedUrl ? (
-            <object
-              data={signed.signedUrl}
-              type="application/pdf"
-              className="mt-3 h-[820px] w-full rounded-xl border border-stone-200 bg-white"
-            >
-              <p className="p-5 text-sm text-stone-500">
-                Your browser will not show the PDF here.{' '}
-                <a className="underline" href={signed.signedUrl}>
-                  Open it in a new tab
-                </a>
-                .
+          <div className="rd-rise mt-9 flex flex-wrap items-end gap-x-8 gap-y-5" style={{ animationDelay: '.08s' }}>
+            <div className="flex items-start gap-3">
+              <HeroNumber value={Number(report.average_pci ?? 0)} />
+              <span className="mt-3 text-[11px] font-bold uppercase leading-[1.7] tracking-[0.16em]" style={{ color: 'var(--dim)' }}>
+                pCi/L<br />average
+              </span>
+            </div>
+            <div className="ml-auto text-right">
+              <OutcomePill outcome={report.outcome} />
+              <p className="rd-num mt-3 text-[12px] tracking-[0.06em]" style={{ color: 'var(--dim)' }}>
+                PEAK {hi.toFixed(1)} · LOW {lo.toFixed(1)} · ACTION {action}
               </p>
-            </object>
-          ) : (
-            <p className="mt-3 rounded-xl border border-stone-200 bg-white px-5 py-8 text-sm text-stone-500">
-              No PDF stored for this report.
+            </div>
+          </div>
+
+          <div className="rd-rise mt-7 flex flex-wrap gap-2.5" style={{ animationDelay: '.14s' }}>
+            <Chip k="Client" v={report.client_name} />
+            <Chip k="Location" v={report.room} />
+            <Chip k="Monitor" v={[report.monitor_model, report.monitor_serial].filter(Boolean).join(' · ') || null} />
+            <Chip k="Duration" v={report.duration_hr ? `${report.duration_hr} hours` : null} />
+          </div>
+
+          {report.weather_included === false && (
+            <p className="mt-5 rounded-xl px-4 py-3 text-sm"
+              style={{ background: 'rgba(250,178,25,.09)', border: '1px solid rgba(250,178,25,.3)', color: '#f7d491' }}>
+              ▲ Outdoor weather was unavailable when this ran, so that page is blank. Everything else is complete.
             </p>
           )}
-        </section>
 
-        <ReadingsTable
-          readings={readings ?? []}
-          caution={Number(firm?.caution_threshold ?? 2.6)}
-          action={Number(firm?.action_threshold ?? 4.0)}
-        />
+          {rows.length > 0 && (
+            <section className="rd-panel rd-rise mt-7 p-6 pb-3" style={{ animationDelay: '.2s' }}>
+              <h2 className="rd-eyebrow" style={{ color: '#fff' }}>Concentration · {rows.length} hours</h2>
+              <div className="mt-3">
+                <Trace readings={rows} caution={caution} action={action} />
+              </div>
+            </section>
+          )}
+
+          <section className="rd-panel rd-rise mt-5 p-6" style={{ animationDelay: '.26s' }}>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <h2 className="rd-eyebrow" style={{ color: '#fff' }}>The report</h2>
+              {signed?.signedUrl && (
+                <a href={signed.signedUrl} download className="rd-btn">↓ Download PDF</a>
+              )}
+            </div>
+            {signed?.signedUrl ? (
+              <object data={signed.signedUrl} type="application/pdf"
+                className="mt-5 h-[760px] w-full rounded-xl"
+                style={{ border: '1px solid var(--edge)', background: '#0a0d14' }}>
+                <p className="p-6 text-sm" style={{ color: 'var(--body)' }}>
+                  Your browser will not show the PDF here.{' '}
+                  <a className="underline" style={{ color: 'var(--accent)' }} href={signed.signedUrl}>
+                    Open it in a new tab
+                  </a>.
+                </p>
+              </object>
+            ) : (
+              <p className="mt-5 text-sm" style={{ color: 'var(--dim)' }}>No PDF stored for this report.</p>
+            )}
+          </section>
+
+          {rows.length > 0 && (
+            <section className="rd-panel rd-rise mt-5 p-6" style={{ animationDelay: '.32s' }}>
+              <div className="flex items-baseline justify-between">
+                <h2 className="rd-eyebrow" style={{ color: '#fff' }}>Hourly readings</h2>
+                <span className="rd-eyebrow">The numbers the PDF was built from</span>
+              </div>
+              <div className="mt-4 max-h-[420px] overflow-y-auto">
+                <table className="w-full text-[13px]">
+                  <tbody>
+                    {rows.map((r, i) => {
+                      const over = r.pci >= action, warn = !over && r.pci >= caution
+                      return (
+                        <tr key={i} style={{ borderBottom: '1px solid var(--hair)' }}>
+                          <td className="py-2.5" style={{ color: 'var(--body)' }}>
+                            {new Date(r.recorded_at).toLocaleString([], {
+                              month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                            })}
+                          </td>
+                          <td className="rd-num py-2.5 text-right font-bold"
+                            style={{ color: over ? outcomeColor('fail') : warn ? outcomeColor('caution') : '#fff' }}>
+                            {r.pci.toFixed(1)}
+                            {(over || warn) && (
+                              <span className="ml-2 text-[10px] font-extrabold uppercase tracking-[0.12em]">
+                                {over ? 'Fail' : 'Caution'}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+        </div>
       </div>
     </main>
   )

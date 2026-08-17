@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { Backdrop, Header } from '@/components/shell'
 import { FirmForm, LogoForm, PeopleEditor } from './settings-forms'
 
 export default async function SettingsPage() {
@@ -16,37 +16,41 @@ export default async function SettingsPage() {
     .order('sort_order')
 
   const { data: signedLogo } = firm?.logo_path
-    ? await supabase.storage
-        .from('raw-uploads')
-        .createSignedUrl(firm.logo_path, 60 * 60)
+    ? await supabase.storage.from('raw-uploads').createSignedUrl(firm.logo_path, 3600)
     : { data: null }
 
   return (
-    <main className="min-h-screen bg-stone-50">
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <Link href="/reports" className="text-sm text-stone-500 hover:text-stone-900">
-          ← Reports
-        </Link>
+    <main className="relative min-h-screen overflow-hidden" style={{ background: 'var(--base)' }}>
+      <Backdrop />
+      <div className="relative z-10">
+        <Header firmName={firm?.name} />
 
-        <h1 className="mt-4 text-xl font-semibold text-stone-900">Settings</h1>
-        <p className="mt-1 text-sm text-stone-500">
-          Everything here prints on the reports this firm generates.
-        </p>
+        <div className="mx-auto max-w-3xl px-6 py-12 sm:px-10">
+          <div className="rd-rise flex gap-5">
+            <div className="rd-bar" />
+            <div>
+              <h1 className="rd-h1">Settings</h1>
+              <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--body)' }}>
+                Everything here prints on the reports this firm generates.
+              </p>
+            </div>
+          </div>
 
-        <div className="mt-6 space-y-5">
-          {firm && (
-            <FirmForm
-              firm={{
-                name: firm.name,
-                website: firm.website,
-                phone: firm.phone,
-                caution_threshold: Number(firm.caution_threshold),
-                action_threshold: Number(firm.action_threshold),
-              }}
-            />
-          )}
-          <LogoForm logoUrl={signedLogo?.signedUrl ?? null} />
-          <PeopleEditor people={people ?? []} />
+          <div className="rd-rise mt-8 space-y-5" style={{ animationDelay: '.1s' }}>
+            {firm && (
+              <FirmForm
+                firm={{
+                  name: firm.name,
+                  website: firm.website,
+                  phone: firm.phone,
+                  caution_threshold: Number(firm.caution_threshold),
+                  action_threshold: Number(firm.action_threshold),
+                }}
+              />
+            )}
+            <LogoForm logoUrl={signedLogo?.signedUrl ?? null} />
+            <PeopleEditor people={people ?? []} />
+          </div>
         </div>
       </div>
     </main>
