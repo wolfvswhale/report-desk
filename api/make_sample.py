@@ -24,6 +24,13 @@ SAMPLES = Path(__file__).resolve().parent.parent / "public" / "samples"
 OUT = SAMPLES / "sample-monitor-data.pdf"
 HOUSE_OUT = SAMPLES / "sample-house.jpg"
 
+# ALREADY A REAL PHOTO: the drawn house below was a stand-in so no real
+# person's home appeared in a public demo. It has been replaced with a
+# generated photograph of a house that does not exist, which is safe for the
+# same reason and looks like the real thing. Set REDRAW_HOUSE = True only if
+# you want the illustration back.
+REDRAW_HOUSE = False
+
 FIRM = "Cardinal Radon Services"
 FIRM_ADDR = "5120 Harbour Pointe Drive"
 FIRM_CITY = "Midlothian, VA 23113"
@@ -208,7 +215,8 @@ def house_illustration():
 
 def main():
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    house_illustration()
+    if REDRAW_HOUSE:
+        house_illustration()
     c = canvas.Canvas(str(OUT), pagesize=letter)
     page_one(c)
     c.showPage()
